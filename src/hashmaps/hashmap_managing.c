@@ -5,33 +5,21 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: vdurand <vdurand@student.42lyon.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/22 19:12:44 by vdurand           #+#    #+#             */
-/*   Updated: 2025/07/19 15:40:59 by vdurand          ###   ########.fr       */
+/*   Created: 2025/07/19 16:38:05 by vdurand           #+#    #+#             */
+/*   Updated: 2025/07/19 17:33:38 by vdurand          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "hashmap.h"
 
-bool	hashmap_init_basics(t_hashmap *map, void (*del)(void *))
-{
-	map->del = del;
-	map->size = 1 << HASHMAP_POWER;
-	map->table = ft_calloc(map->size + 1, sizeof(t_hash_entry));
-	if (!map->table)
-		return (false);
-	map->count = 0;
-	map->charge_factor = HASHMAP_CHARGEFACTOR;
-	return (true);
-}
-
-t_hashmap	*hashmap_new(int power, double chargefactor, void (*del)(void *))
+t_hashmap	*hashmap_new(int power, double chargefactor,
+				void (*val_free)(void *), unsigned long (*hash)(void *key))
 {
 	t_hashmap	*result;
 
 	result = ft_calloc(1, sizeof(t_hashmap));
 	if (!result)
 		return (NULL);
-	result->del = del;
 	result->size = 1 << power;
 	result->table = ft_calloc(result->size + 1, sizeof(t_hash_entry));
 	if (!result->table)
@@ -41,30 +29,39 @@ t_hashmap	*hashmap_new(int power, double chargefactor, void (*del)(void *))
 	}
 	result->count = 0;
 	result->charge_factor = chargefactor;
+	result->hash = hash;
+	result->val_free = val_free;
+	result->resize = hashmap_resize;
+	result->add = hashmap_add;
+	result->get = hashmap_search;
+	result->iter = hashmap_iterate;
+	result->free = hashmap_free;
+	result->remove = hashmap_remove;
 	return (result);
 }
 
-void	hashmap_free(t_hashmap *map)
+void	hashmap_free(t_hashmap *self)
 {
-	if (!map)
+	if (!self)
 		return ;
-	hashmap_free_content(map);
-	free(map);
+	hashmap_free_content(self);
+	free(self);
 }
 
-void	hashmap_free_content(t_hashmap *map)
+void	hashmap_free_content(t_hashmap *self)
 {
 	size_t	index;
 
-	if (map->table == NULL)
+	if (self->table == NULL)
 		return ;
 	index = 0;
-	while (index < map->size)
+	while (index < self->size)
 	{
-		if (map->table[index].status == OCCUPIED)
-			map->del(map->table[index].value);
+		if (self->table[index].status == OCCUPIED
+			|| self->table[index].status == TOMBSTONE)
+			self->val_free(self->table[index].value);
 		index++;
 	}
-	if (map->table)
-		free(map->table);
+	if (self->table)
+		free(self->table);
 }

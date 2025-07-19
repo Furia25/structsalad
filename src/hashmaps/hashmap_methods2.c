@@ -1,28 +1,55 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   hashmap_utils.c                                    :+:      :+:    :+:   */
+/*   hashmap_methods2.c                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: vdurand <vdurand@student.42lyon.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 19:10:14 by vdurand           #+#    #+#             */
-/*   Updated: 2025/07/19 15:48:57 by vdurand          ###   ########.fr       */
+/*   Updated: 2025/07/19 17:38:06 by vdurand          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "hashmap.h"
 
-void	hashmap_iterate(void (*f) (unsigned long key, void *), t_hashmap *map)
+int	hashmap_add(t_hashmap *self, void *key, void *value)
+{
+	unsigned long	key_v;
+
+	key_v = self->hash(key);
+	hashmap_insert(self, key_v, value);
+	return (1);
+}
+
+void	hashmap_remove(t_hashmap *self, void *key)
+{
+	t_hash_entry	*entry;
+
+	entry = self->get(self, key);
+	if (entry != NULL)
+	{
+		entry->status = TOMBSTONE;
+		if (entry->value)
+		{
+			self->val_free(entry->value);
+			entry->value = NULL;
+			self->count -= 1;
+		}
+	}
+}
+
+void	hashmap_iterate(t_hashmap *self, 
+			void (*f) (unsigned long key_v, void *value))
 {
 	size_t			index;
-	int				actual_count;
+	size_t			actual_count;
 	t_hash_entry	entry;
 
 	index = 0;
 	actual_count = 0;
-	while (index < map->size && actual_count < map->count)
+	while (index < self->size && actual_count < self->count)
 	{
-		entry = map->table[index];
+		entry = self->table[index];
 		if (entry.status == OCCUPIED)
 		{
 			f(entry.key, entry.value);
@@ -30,40 +57,4 @@ void	hashmap_iterate(void (*f) (unsigned long key, void *), t_hashmap *map)
 		}
 		index++;
 	}
-}
-
-void	hashmap_remove(unsigned long key, t_hashmap *map)
-{
-	t_hash_entry	*entry;
-
-	entry = hashmap_search(key, map);
-	if (entry != NULL)
-	{
-		entry->status = TOMBSTONE;
-		if (entry->value)
-		{
-			map->del(entry->value);
-			entry->value = NULL;
-			map->count -= 1;
-		}
-	}
-}
-
-unsigned long	hash(char *str)
-{
-	unsigned long	hash;
-	unsigned long	c;
-	int				i;
-
-	hash = 0x811c9dc5;
-	i = 0;
-	while (str[i] != '\0')
-	{
-		c = (unsigned long)str[i];
-		hash ^= c;
-		hash *= 0x5bd1e995;
-		hash ^= hash >> 15;
-		i++;
-	}
-	return (hash);
 }

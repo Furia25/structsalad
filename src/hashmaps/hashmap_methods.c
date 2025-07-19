@@ -6,7 +6,7 @@
 /*   By: vdurand <vdurand@student.42lyon.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/22 17:18:50 by vdurand           #+#    #+#             */
-/*   Updated: 2025/07/19 15:40:52 by vdurand          ###   ########.fr       */
+/*   Updated: 2025/07/19 17:36:49 by vdurand          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,19 +22,7 @@ static void	swap(t_hash_entry *a, t_hash_entry *b)
 	*b = temp;
 }
 
-/**
- * @brief Resizes the hashmap's internal table.
- *
- * Allocates a new table, rehashes existing entries,
- * and uses linear probing
- * for collisions. The table is expanded if the load
- * factor threshold is exceeded.
- *
- * @param new_size The new table size.
- * @param map A pointer to the hashmap structure.
- * @return 1 if successful, 0 otherwise.
- */
-int	hashmap_resize(size_t new_size, t_hashmap *map)
+int	hashmap_resize(t_hashmap *self, size_t new_size)
 {
 	t_hash_entry	*new_table;
 	t_hash_entry	*old_table;
@@ -46,16 +34,16 @@ int	hashmap_resize(size_t new_size, t_hashmap *map)
 	new_table = ft_calloc(new_size, sizeof(t_hash_entry));
 	if (!new_table)
 		return (0);
-	old_table = map->table;
-	old_size = map->size;
-	map->table = new_table;
-	map->size = new_size;
-	map->count = 0;
+	old_table = self->table;
+	old_size = self->size;
+	self->table = new_table;
+	self->size = new_size;
+	self->count = 0;
 	index = 0;
 	while (index < old_size)
 	{
 		if (old_table[index].status == OCCUPIED)
-			hashmap_insert(old_table[index].key, old_table[index].value, map);
+			hashmap_insert(self, old_table[index].key, old_table[index].value);
 		index++;
 	}
 	free(old_table);
@@ -72,7 +60,7 @@ static void	prcs(unsigned long key, size_t i,
 		if (map->table[i].status == EMPTY || map->table[i].status == TOMBSTONE)
 		{
 			if (map->table[i].status == TOMBSTONE && map->table[i].value)
-				map->del(map->table[i].value);
+				map->val_free(map->table[i].value);
 			map->table[i] = last;
 			map->count++;
 			return ;
@@ -80,7 +68,7 @@ static void	prcs(unsigned long key, size_t i,
 		if (map->table[i].status == OCCUPIED && map->table[i].key == key)
 		{
 			old_value = map->table[i].value;
-			map->del(old_value);
+			map->val_free(old_value);
 			map->table[i] = last;
 			return ;
 		}
@@ -91,64 +79,42 @@ static void	prcs(unsigned long key, size_t i,
 	}
 }
 
-/**
- * @brief Inserts a key-value pair into the hashmap.
- *
- * If the key already exists, updates the value.
- * Resizes the hashmap if the load factor
- * exceeds the threshold. Linear probing resolves
- * collisions with robin hood opti.
- *
- * @param key The key to insert.
- * @param value The associated value.
- * @param map A pointer to the hashmap structure.
- * @return 1 if successful, 0 on error.
- */
-int	hashmap_insert(unsigned long key, void *value, t_hashmap *map)
+int	hashmap_insert(t_hashmap *self, unsigned long key, void *value)
 {
 	size_t			pos;
 	t_hash_entry	last;
 
-	if (!map)
+	if (!self)
 		return (0);
 	if (!value)
 		return (0);
-	if ((double)(map->count + 1) / map->size >= map->charge_factor)
-		if (!hashmap_resize(map->size << 1, map))
+	if ((double)(self->count + 1) / self->size >= self->charge_factor)
+		if (!self->resize(self, self->size << 1))
 			return (0);
-	pos = key & (map->size - 1);
+	pos = key & (self->size - 1);
 	last = (t_hash_entry){.key = key, .value = value, \
 		.status = OCCUPIED, .probe_distance = 0};
-	prcs(key, pos, last, map);
+	prcs(key, pos, last, self);
 	return (1);
 }
 
-/**
- * @brief Searches for a key in the hashmap.
- *
- * Returns the value associated with the key,
- * or NULL if the key is not found.
- * Linear probing resolves collisions with robin hood opti.
- *
- * @param key The key to search for.
- * @param map A pointer to the hashmap structure.
- * @return The associated value, or NULL if not found.
- */
-t_hash_entry	*hashmap_search(unsigned long key, t_hashmap *map)
+t_hash_entry	*hashmap_search(t_hashmap *self, void *key)
 {
-	size_t	pos;
-	size_t	dist;
+	unsigned long	key_v;
+	size_t			pos;
+	size_t			dist;
 
+	key_v = self->hash(key);
 	dist = 0;
-	pos = key & (map->size - 1);
-	while (map->table[pos].status != EMPTY)
+	pos = key_v & (self->size - 1);
+	while (self->table[pos].status != EMPTY)
 	{
-		if (map->table[pos].status != TOMBSTONE)
-			if (map->table[pos].key == key)
-				return (&map->table[pos]);
-		if (dist > map->table[pos].probe_distance)
+		if (self->table[pos].status != TOMBSTONE)
+			if (self->table[pos].key == key_v)
+				return (&self->table[pos]);
+		if (dist > self->table[pos].probe_distance)
 			return (NULL);
-		pos = (pos + 1) & (map->size - 1);
+		pos = (pos + 1) & (self->size - 1);
 		dist++;
 	}
 	return (NULL);
