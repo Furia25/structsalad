@@ -6,12 +6,13 @@
 /*   By: vdurand <vdurand@student.42lyon.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/22 17:18:50 by vdurand           #+#    #+#             */
-/*   Updated: 2025/07/19 17:36:49 by vdurand          ###   ########.fr       */
+/*   Updated: 2025/07/19 18:41:59 by vdurand          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "hashmap.h"
 #include <stdint.h>
+#include "libft.h"
 
 static void	swap(t_hash_entry *a, t_hash_entry *b)
 {

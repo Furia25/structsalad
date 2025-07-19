@@ -6,11 +6,12 @@
 /*   By: vdurand <vdurand@student.42lyon.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/19 16:38:05 by vdurand           #+#    #+#             */
-/*   Updated: 2025/07/19 17:33:38 by vdurand          ###   ########.fr       */
+/*   Updated: 2025/07/19 18:56:53 by vdurand          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "hashmap.h"
+#include "libft.h"
 
 t_hashmap	*hashmap_new(int power, double chargefactor,
 				void (*val_free)(void *), unsigned long (*hash)(void *key))
@@ -40,11 +41,14 @@ t_hashmap	*hashmap_new(int power, double chargefactor,
 	return (result);
 }
 
-void	hashmap_free(t_hashmap *self)
+void	hashmap_free(t_hashmap *self, bool content)
 {
 	if (!self)
 		return ;
-	hashmap_free_content(self);
+	if (content)
+		hashmap_free_content(self);
+	if (self->table)
+		free(self->table);
 	free(self);
 }
 
@@ -57,11 +61,8 @@ void	hashmap_free_content(t_hashmap *self)
 	index = 0;
 	while (index < self->size)
 	{
-		if (self->table[index].status == OCCUPIED
-			|| self->table[index].status == TOMBSTONE)
+		if (self->table[index].status == OCCUPIED)
 			self->val_free(self->table[index].value);
 		index++;
 	}
-	if (self->table)
-		free(self->table);
 }

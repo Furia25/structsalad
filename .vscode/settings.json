@@ -1,5 +1,7 @@
 {
 	"files.associations": {
-		"initializer_list": "c"
+		"initializer_list": "c",
+		"hashmap.h": "c",
+		"stdio.h": "c"
 	}
 }

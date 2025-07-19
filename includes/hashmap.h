@@ -6,14 +6,13 @@
 /*   By: vdurand <vdurand@student.42lyon.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/14 15:20:54 by vdurand           #+#    #+#             */
-/*   Updated: 2025/07/19 17:36:32 by vdurand          ###   ########.fr       */
+/*   Updated: 2025/07/19 18:49:15 by vdurand          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef HASHMAP_H
 # define HASHMAP_H
 
-# include "libft.h"
 # include <stddef.h>
 # include <stdbool.h>
 # include <stdint.h>
@@ -51,7 +50,7 @@ struct s_hashmap
 	int				(*resize)(t_hashmap *self, size_t new_size);
 	int				(*add)(t_hashmap *self, void *key, void *value);
 	t_hash_entry	*(*get)(t_hashmap *self, void *key);
-	void			(*free)(t_hashmap *self);
+	void			(*free)(t_hashmap *self, bool content);
 	void			(*iter)(t_hashmap *self, void (*f)(unsigned long key, void *val));
 	void			(*remove)(t_hashmap *self, void *key);
 };
@@ -63,7 +62,7 @@ t_hashmap			*hashmap_new(int power,
 						void (*val_free)(void *),
 						unsigned long (*hash)(void *key));
 
-void				hashmap_free(t_hashmap *self);
+void				hashmap_free(t_hashmap *self, bool content);
 void				hashmap_free_content(t_hashmap *self);
 void				hashmap_remove(t_hashmap *self, void *key);
 int					hashmap_insert(t_hashmap *self,
